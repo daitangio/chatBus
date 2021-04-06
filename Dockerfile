@@ -1,4 +1,3 @@
-#FROM erlang:24
-FROM erlang:23
+FROM erlang:24
 # Remve old rebar
 RUN rm /usr/local/bin/rebar
