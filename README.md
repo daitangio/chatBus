@@ -14,7 +14,7 @@ UI build using google polymer !
 Build client
 
     $ cd apps/chat_client/polymer
-    $ bower intsall
+    $ bower install
 
 Build App
 

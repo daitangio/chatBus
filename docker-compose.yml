@@ -1,0 +1,10 @@
+version: '2'
+services:
+  chat_bus:
+    image: chat_bus:0.1.0
+    build:
+      context: .
+    volumes:
+      - $PWD:/usr/src/myapp
+    ports:
+      - "46011:46011"
