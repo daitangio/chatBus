@@ -14,7 +14,11 @@
   {git,"git://github.com/sinasamavati/leptus.git",
        {ref,"e0d9bd2270dfa85bd5922e0a5c2d0289d2dc0ef9"}},
   0},
- {<<"ranch">>,{pkg,<<"ranch">>,<<"1.5.0">>},2}]}.
+ {<<"ranch">>,{pkg,<<"ranch">>,<<"1.5.0">>},2},
+ {<<"sqlite3">>,
+  {git,"https://github.com/processone/erlang-sqlite3",
+       {ref,"ca499cf5760ad7e0e7adeb99ec6893be1bf8712b"}},
+  0}]}.
 [
 {pkg_hash,[
  {<<"cowboy">>, <<"F1B72FABE9C8A5FC64AC5AC85FB65474D64733D1DF52A26FAD5D4BA3D9F70A9F">>},
