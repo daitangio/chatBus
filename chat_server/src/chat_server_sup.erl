@@ -37,8 +37,8 @@ init([]) ->
     %% Specify a child process, including a start function.
     %% Normally the module my_worker would be a gen_server
     %% or a gen_fsm.
-    Child = #{id => chat_server_gen_server,
-              start => {chat_server_gen_server, start_link , []}},
+    Child = #{id => chat_bus,
+              start => {chat_bus, start_link , []}},
     ChildSpecs = [
         Child
         ],

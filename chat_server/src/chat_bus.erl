@@ -1,4 +1,4 @@
--module(chat_server_gen_server).
+-module(chat_bus).
 
 -behaviour(gen_server).
 
@@ -60,16 +60,31 @@ bus_list() ->
 %% Private level api
 
 % API Migration is an recursive function....
-migrate_db(2) ->
+migrate_db(3) ->
     % Version 2  is the next one you will develop
     lager:info("Database on sync");
+
+migrate_db(2)->
+    Hitchhickers = <<" Create Table if not exists USER (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name text not null,
+                        current_bus default 1,
+                        CONSTRAINT FK_BUS
+                          FOREIGN KEY (CURRENT_BUS)
+                          REFERENCES BUS_LIST(ID)
+                    );
+        ">>,
+    ok=sqlite3:sql_exec(chat_server, Hitchhickers),
+    ok=sqlite3:sql_exec(chat_server,"UPDATE bus_config SET value=? WHERE key='db_version'",[{1,2}]),
+    migrate_db(3);
 
 migrate_db(1) ->
     lager:info("Migrating to Version schema 1"),
     % Ensure hippy bus is here
     sqlite3:write(chat_server, bus_list, [{id,1}, {bus_name, "hippy"}]),
     % Go..
-    ok=sqlite3:sql_exec(chat_server,"UPDATE bus_config SET value=? WHERE key='db_version'",[{1,1}]);
+    ok=sqlite3:sql_exec(chat_server,"UPDATE bus_config SET value=? WHERE key='db_version'",[{1,1}]),
+    migrate_db(2);
     
 migrate_db(0) ->
     %% Eval PRAGMA busy_timeout= in milliseconds
@@ -117,6 +132,7 @@ init([]) ->
 
 handle_call({bus_list}, _From, State) ->
     [{columns, ["bus_name"]}, {rows, AllRows}]=sqlite3:sql_exec(chat_server, "select bus_name from bus_list order by ts;"),
+    % AllRows i,e. [{<<"hippy">>},{<<"h2">>} ,...... ]
     % I now this code is terrible
     % I hope Erlang Gods will forgive me:
     ListOfBinary= [ X || {X} <- AllRows],
