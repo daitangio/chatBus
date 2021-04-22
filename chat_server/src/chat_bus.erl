@@ -120,6 +120,17 @@ ensure_db_migrated()->
 %% Cfr https://riptutorial.com/erlang/example/24705/using-gen-server-behavior
 %% -----------------------------------------------------------------------------
 
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Initializes the server
+%%
+%% @spec init(Args) -> {ok, State} |
+%%                     {ok, State, Timeout} |
+%%                     ignore |
+%%                     {stop, Reason}
+%% @end
+%%--------------------------------------------------------------------
 init([]) ->
     lager:info("Chat Server started"),
     sqlite3:open(chat_server, [{file, "/var/lib/chat_server.db"}]),
@@ -128,7 +139,23 @@ init([]) ->
     State = [],
     Return = {ok, State},
     lager:info("init: ~p~n", [State]),
-    Return.
+    {ok, #{users => ?MODULE}}.
+    %% Return.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Handling call messages
+%%
+%% @spec handle_call(Request, From, State) ->
+%%                                   {reply, Reply, State} |
+%%                                   {reply, Reply, State, Timeout} |
+%%                                   {noreply, State} |
+%%                                   {noreply, State, Timeout} |
+%%                                   {stop, Reason, Reply, State} |
+%%                                   {stop, Reason, State}
+%% @end
+%%--------------------------------------------------------------------
 
 handle_call({bus_list}, _From, State) ->
     [{columns, ["bus_name"]}, {rows, AllRows}]=sqlite3:sql_exec(chat_server, "select bus_name from bus_list order by ts;"),
@@ -140,12 +167,28 @@ handle_call({bus_list}, _From, State) ->
     {reply, {ok, ListOfBus}, State};
 
 
+handle_call({store_username, BusName, Username}, _From, #{users := Users} = State) ->
+    lager:info("Storing user ~p~n", [Username]),
+    % OLD CODE BASED ON ETS2 to torn to SQLITE:
+    Reply = case ets:match(Users, {Username, '$1'}, 1) of
+                '$end_of_table' ->
+                    ets:insert(?MODULE, {Username, BusName}),
+                    {ok, Username};
+                _ ->
+                    {ok, error}
+            end,
+    {reply, Reply, State};
+
 
 handle_call(Request, From, State) ->
     Reply = ok,
     Return = {reply, Reply, State},
     lager:info("handle_call: ~p ret: ~p~n", [{Request,From}, Return]),
     Return.
+
+handle_cast(stop, State) ->
+    lager:info("Stop requested"),
+    {stop, {reason, "Just received stop message"}, State};
 
 handle_cast(_Msg, State) ->
     Return = {noreply, State},
@@ -159,7 +202,7 @@ handle_info(_Info, State) ->
 
 terminate(_Reason, _State) ->
     Return = ok,
-    lager:info("terminate: ~p~n", [Return]),
+    lager:info("Terminate request: ~p~n", [Return]),
     sqlite3:close(chat_server),
     ok.
 
